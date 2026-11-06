@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emoji Gacha RPG</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+    font-family:Arial,sans-serif;
+    background:#1a1a2e;
+    color:white;
+    overflow:hidden;
+}
+
+.screen{display:none;width:100vw;height:100vh;position:relative;}
+.active{display:block;}
+
+.topbar{
+    height:60px;
+    background:#16213e;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 20px;
+    font-size:24px;
+}
+.money-btn{font-size:22px;}
+
+/* ---------- CHARACTER SLOTS (HOME) ---------- */
+.slots{
+    margin-top:120px;
+    display:flex;
+    justify-content:center;
+    gap:50px;
+}
+
+.slot{
+    width:160px;
+    height:160px;
+    border-radius:50%;
+    background:#16213e;
+    border:4px solid #3a3f5c;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:transform .15s, border-color .15s;
+    user-select:none;
+}
+.slot:hover{transform:scale(1.08);border-color:#8a8fb0;}
+
+.slot .plus{font-size:80px;color:gray;line-height:1;font-weight:bold;}
+.slot .emoji{font-size:90px;line-height:1;}
+.slot.filled{border-color:gold;background:#1f2a4d;}
+
+.bottom-left{position:absolute;left:20px;bottom:20px;}
+.bottom-right{position:absolute;right:20px;bottom:20px;}
+
+button{
+    border:none;
+    border-radius:12px;
+    padding:15px 25px;
+    font-size:20px;
+    cursor:pointer;
+}
+.disabled{background:gray;cursor:not-allowed;}
+
+.back{position:absolute;top:10px;left:10px;z-index:10;}
+
+/* ---------- GACHA ---------- */
+.gachaTable{height:60vh;overflow:auto;padding:20px;}
+
+.pullBtn{
+    display:block;
+    margin:auto;
+    width:280px;
+    height:90px;
+    background:gold;
+    font-size:40px;
+    font-weight:bold;
+}
+
+#rarityGrid{
+    display:grid;
+    grid-template-columns:repeat(5,120px);
+    gap:20px;
+    justify-content:center;
+    margin-top:120px;
+}
+
+.pull-card{
+    width:120px;
+    height:120px;
+    background:black;
+    border:2px solid #444;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:70px;
+    transition:all .8s ease;
+}
+
+.common{background:#22c55e;}
+.rare{background:#2563eb;}
+.epic{background:#9333ea;box-shadow:0 0 30px #9333ea;}
+.legendary{background:gold;box-shadow:0 0 50px gold;}
+
+.glitter{animation:glitter .8s forwards;}
+@keyframes glitter{
+    0%{transform:scale(1);opacity:1;}
+    50%{transform:scale(1.4);filter:brightness(4);}
+    100%{transform:scale(0);opacity:0;}
+}
+
+.screenShake{animation:shake .4s;}
+@keyframes shake{
+    0%{transform:translate(0);}
+    20%{transform:translate(12px);}
+    40%{transform:translate(-12px);}
+    60%{transform:translate(8px);}
+    80%{transform:translate(-8px);}
+    100%{transform:translate(0);}
+}
+
+.title{text-align:center;margin-top:20px;}
+.subtitle{text-align:center;margin-top:8px;color:#9aa0c0;font-size:18px;}
+
+/* ---------- CHARACTER PICKER ---------- */
+#ownedGrid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+    gap:18px;
+    padding:30px 40px;
+    height:calc(100vh - 230px);
+    overflow:auto;
+    align-content:start;
+}
+
+.owned-card{
+    flex-direction:column;
+    gap:8px;
+    padding:14px 10px;
+    min-height:170px;
+    background:#16213e;
+    border:3px solid #3a3f5c;
+    border-radius:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:64px;
+    cursor:pointer;
+    position:relative;
+    transition:transform .15s, border-color .15s;
+    user-select:none;
+}
+.owned-card:hover{transform:scale(1.08);border-color:#8a8fb0;}
+.owned-card.equipped{border-color:gold;}
+.owned-card .badge{
+    position:absolute;
+    top:-10px;
+    right:-10px;
+    background:gold;
+    color:black;
+    font-size:14px;
+    font-weight:bold;
+    border-radius:10px;
+    padding:2px 8px;
+}
+
+.owned-card .big{font-size:64px;line-height:1;}
+.owned-card .stats{
+    font-size:14px;
+    text-align:center;
+    color:#cfd3ee;
+    line-height:1.4;
+}
+.owned-card .stats b{color:gold;}
+
+.remove-btn{
+    position:absolute;
+    top:10px;
+    right:10px;
+    background:#b91c1c;
+    color:white;
+    font-size:16px;
+    padding:10px 16px;
+}
+.hidden{display:none;}
+
+.unlock-btn{display:block;margin:12px auto 0;background:#22c55e;color:black;font-weight:bold;font-size:18px;padding:10px 22px;}
+
+/* ---------- FIGHT ---------- */
+.fightWrap{
+    height:100%;
+    padding:60px 20px 20px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+}
+.teamTitle{text-align:center;font-size:20px;margin:8px 0;color:#9aa0c0;}
+.team{display:flex;justify-content:center;gap:24px;}
+
+.fighter{
+    width:220px;
+    background:#16213e;
+    border:3px solid #3a3f5c;
+    border-radius:16px;
+    padding:12px;
+    text-align:center;
+    position:relative;
+    transition:transform .2s, border-color .2s, box-shadow .3s, opacity .5s;
+    user-select:none;
+}
+.fighter .big{font-size:56px;line-height:1.1;}
+.fighter .stats{font-size:14px;color:#cfd3ee;line-height:1.4;}
+.fighter .stats b{color:gold;}
+.fighter .hptext{font-size:14px;margin-bottom:6px;}
+.hpbar{height:12px;background:#333;border-radius:6px;overflow:hidden;margin:6px 0 4px;}
+.hpfill{height:100%;width:100%;background:#22c55e;transition:width .4s, background .4s;}
+
+.fighter.enemy{border-color:#b91c1c;}
+.fighter.player{border-color:#2563eb;cursor:pointer;}
+.team:not(.locked) .fighter.player:not(.dead):hover{transform:translateY(-8px);border-color:gold;}
+.team.locked .fighter.player{cursor:not-allowed;}
+.fighter.dead{opacity:.25;filter:grayscale(1);cursor:default !important;}
+.fighter.acting{transform:scale(1.1);border-color:gold;}
+.fighter.hit{animation:shake .4s;}
+.fighter.healed{box-shadow:0 0 25px #22c55e;}
+.fighter.shielded{box-shadow:0 0 20px #60a5fa;}
+.fighter.shielded::after{content:"🛡️";position:absolute;top:4px;right:8px;font-size:22px;}
+
+.fightLog{
+    text-align:center;
+    font-size:24px;
+    min-height:70px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:10px;
+}
+
+.pop{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:32px;
+    font-weight:bold;
+    pointer-events:none;
+    text-shadow:0 0 6px black;
+    animation:floatUp 1s forwards;
+    z-index:5;
+}
+@keyframes floatUp{
+    0%{opacity:1;top:30px;}
+    100%{opacity:0;top:-20px;}
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- HOME -->
+<div id="home" class="screen active">
+
+    <div class="topbar">
+        <div id="money">💴 0</div>
+        <button class="money-btn" onclick="addMoney()">+1500</button>
+    </div>
+
+    <div class="slots" id="slots"></div>
+
+    <div class="bottom-left">
+        <button onclick="startFight()">⚔️ Fight</button>
+    </div>
+
+    <div class="bottom-right">
+        <button id="gachaButton" onclick="openGacha()">🎰 Gacha 10 Pull (1500 💴)</button>
+    </div>
+
+</div>
+
+<!-- CHARACTER SELECT -->
+<div id="select" class="screen">
+
+    <button class="back" onclick="showScreen('home')">⬅ Back</button>
+    <button id="removeBtn" class="remove-btn hidden" onclick="removeFromSlot()">🗑 Remove</button>
+
+    <h1 class="title" id="selectTitle">Choose Character</h1>
+    <p class="subtitle">Click a character to put it in this slot</p>
+    <button class="unlock-btn" onclick="unlockAll()">🔓 Unlock All</button>
+
+    <div id="ownedGrid"></div>
+
+</div>
+
+<!-- GACHA -->
+<div id="gacha" class="screen">
+
+    <button class="back" onclick="showScreen('home')">⬅ Back</button>
+
+    <h1 class="title">Character List</h1>
+
+    <div id="chart" class="gachaTable"></div>
+
+    <button class="pullBtn" onclick="pullGacha()">PULL</button>
+
+</div>
+
+<!-- REVEAL -->
+<div id="revealScreen" class="screen">
+    <h1 class="title">Opening...</h1>
+    <div id="rarityGrid"></div>
+</div>
+
+<!-- FIGHT -->
+<div id="fight" class="screen">
+
+    <button class="back" onclick="leaveFight()">⬅ Back</button>
+
+    <div class="fightWrap">
+
+        <div>
+            <h2 class="teamTitle">👾 Enemies</h2>
+            <div id="enemyTeam" class="team"></div>
+        </div>
+
+        <div id="fightLog" class="fightLog"></div>
+
+        <div>
+            <div id="playerTeam" class="team"></div>
+            <h2 class="teamTitle">⭐ Your Team – click an emoji to attack</h2>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+let money = 0;
+
+const legendary = ["🐉","🦄","👹","🪬"];
+
+const epic = [
+"🌟","🧟","💀","🔥","⚡",
+"🥀","👻","🎭","🛸","💎"
+];
+
+const rare = [
+"🦈","🐵","🐱","🐶","🐰",
+"🦊","🐻","🐼","🐨","🐷",
+"🐮","🦁","🐯","🐔","🦆",
+"🐺","🦇","🐙","🦀","🐢"
+];
+
+const common = [
+"🙂","😀","😎","🤬","😱",
+"🫡","🫪","🤥","🤠","🥸",
+"🤓","🤩","🥲","😴","😶‍🌫️",
+"🫥","🙃","😋","🤪","😏",
+"🥳","😭","😂","🫠","🤔",
+"🤯","🥱","🥶","😵‍💫","🫨"
+];
+
+/* ---------- CHARACTER STATS: [HP, Attack] ---------- */
+const STATS = {
+/* Legendary */
+"🐉":[200,"50 DMG"],
+"🦄":[150,"60 Heal to all companions"],
+"👹":[220,"80 DMG to one enemy and 20 DMG to himself"],
+"🪬":[200,"Shield protect all companions"],
+
+/* Epic */
+"🌟":[100,"20 Heal"],
+"🧟":[120,"30 DMG"],
+"💀":[90,"40 DMG"],
+"🔥":[80,"25 DMG to all enemies"],
+"⚡":[70,"45 DMG to one random enemy"],
+"🥀":[100,"20 DMG and heals himself 10"],
+"👻":[80,"Shield protect himself"],
+"🎭":[90,"Copies the attack of a random companion"],
+"🛸":[110,"30 DMG to 2 random enemies"],
+"💎":[150,"Shield protect one emoji"],
+
+/* Rare */
+"🦈":[100,"35 DMG"],
+"🐵":[80,"25 DMG"],
+"🐱":[70,"30 DMG"],
+"🐶":[90,"25 DMG"],
+"🐰":[60,"15 Heal"],
+"🦊":[70,"30 DMG"],
+"🐻":[140,"30 DMG"],
+"🐼":[130,"Shield protect one emoji"],
+"🐨":[110,"20 Heal"],
+"🐷":[100,"20 DMG"],
+"🐮":[120,"25 DMG"],
+"🦁":[110,"40 DMG"],
+"🐯":[100,"40 DMG"],
+"🐔":[60,"25 DMG"],
+"🦆":[70,"15 Heal"],
+"🐺":[90,"35 DMG"],
+"🦇":[70,"20 DMG"],
+"🐙":[100,"15 DMG to 2 random enemies"],
+"🦀":[120,"25 DMG"],
+"🐢":[200,"Shield protect one emoji"],
+
+/* Common */
+"🙂":[50,"10 DMG"],
+"😀":[40,"8 DMG"],
+"😎":[45,"12 DMG"],
+"🤬":[35,"15 DMG"],
+"😱":[30,"5 DMG"],
+"🫡":[50,"Shield protect one emoji"],
+"🫪":[40,"10 DMG"],
+"🤥":[35,"8 DMG"],
+"🤠":[50,"12 DMG"],
+"🥸":[40,"10 DMG"],
+"🤓":[35,"5 Heal"],
+"🤩":[45,"10 DMG"],
+"🥲":[40,"5 Heal"],
+"😴":[60,"3 DMG"],
+"😶‍🌫️":[40,"Shield protect himself"],
+"🫥":[30,"6 DMG"],
+"🙃":[45,"9 DMG"],
+"😋":[50,"5 Heal"],
+"🤪":[40,"14 DMG"],
+"😏":[45,"11 DMG"],
+"🥳":[40,"8 Heal"],
+"😭":[55,"4 DMG"],
+"😂":[45,"9 DMG"],
+"🫠":[35,"7 DMG"],
+"🤔":[50,"6 Heal"],
+"🤯":[50,"20000 DMG to himself, one random companion and one random enemy"],
+"🥱":[60,"3 Heal"],
+"🥶":[45,"10 DMG"],
+"😵‍💫":[40,"8 DMG"],
+"🫨":[35,"12 DMG"]
+};
+
+function statsHTML(emoji){
+    const st = STATS[emoji];
+    if(!st) return '<div class="stats">No stats</div>';
+    return '<div class="stats"><b>HP:</b> ' + st[0] +
+           '<br><b>Attack:</b> ' + st[1] + '</div>';
+}
+
+let owned = ["🙂"];
+
+/* 3 character slots: null = empty (gray plus), otherwise an emoji */
+let slots = ["🙂", null, null];
+
+/* which slot is currently being edited in the select screen */
+let editingSlot = null;
+
+function showScreen(id){
+    document.querySelectorAll(".screen").forEach(x => x.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+}
+
+function addMoney(){
+    money += 1500;
+    updateHome();
+}
+
+/* ---------- HOME ---------- */
+
+function renderSlots(){
+    const container = document.getElementById("slots");
+    container.innerHTML = "";
+
+    slots.forEach((emoji, i) => {
+        const slot = document.createElement("div");
+        slot.className = "slot" + (emoji ? " filled" : "");
+
+        if(emoji){
+            slot.innerHTML = '<span class="emoji">' + emoji + '</span>';
+        } else {
+            slot.innerHTML = '<span class="plus">+</span>';
+        }
+
+        slot.onclick = () => openSelect(i);
+        container.appendChild(slot);
+    });
+}
+
+function updateHome(){
+    document.getElementById("money").innerText = "💴 " + money;
+
+    renderSlots();
+
+    const btn = document.getElementById("gachaButton");
+
+    if(money >= 1500){
+        btn.disabled = false;
+        btn.classList.remove("disabled");
+    } else {
+        btn.disabled = true;
+        btn.classList.add("disabled");
+    }
+}
+
+/* ---------- CHARACTER SELECT ---------- */
+
+function openSelect(slotIndex){
+    editingSlot = slotIndex;
+
+    document.getElementById("selectTitle").innerText =
+        "Choose Character (Slot " + (slotIndex + 1) + ")";
+
+    /* only show the remove button if the slot has a character */
+    document.getElementById("removeBtn")
+        .classList.toggle("hidden", !slots[slotIndex]);
+
+    buildOwnedGrid();
+    showScreen("select");
+}
+
+function buildOwnedGrid(){
+    const grid = document.getElementById("ownedGrid");
+    grid.innerHTML = "";
+
+    owned.forEach(emoji => {
+        const card = document.createElement("div");
+        const slotOfThis = slots.indexOf(emoji);
+
+        card.className = "owned-card" + (slotOfThis !== -1 ? " equipped" : "");
+        card.innerHTML = '<div class="big">' + emoji + '</div>' + statsHTML(emoji);
+
+        if(slotOfThis !== -1){
+            card.innerHTML += '<span class="badge">Slot ' + (slotOfThis + 1) + '</span>';
+        }
+
+        card.onclick = () => chooseCharacter(emoji);
+        grid.appendChild(card);
+    });
+}
+
+function chooseCharacter(emoji){
+    /* a character can only be in one slot -> remove it from the old one */
+    const old = slots.indexOf(emoji);
+    if(old !== -1) slots[old] = null;
+
+    slots[editingSlot] = emoji;
+
+    updateHome();
+    showScreen("home");
+}
+
+function removeFromSlot(){
+    slots[editingSlot] = null;
+    updateHome();
+    showScreen("home");
+}
+
+/* ---------- GACHA ---------- */
+
+function openGacha(){
+    showScreen("gacha");
+}
+
+function buildChart(){
+    let html = "";
+
+    html += "<h3>Legendary (0.5%)</h3>";
+    legendary.forEach(x => html += x + " ");
+
+    html += "<h3><br>Epic (1%)</h3>";
+    epic.forEach(x => html += x + " ");
+
+    html += "<h3><br>Rare (30%)</h3>";
+    rare.forEach(x => html += x + " ");
+
+    html += "<h3><br>Common (~68.5%)</h3>";
+    common.forEach(x => html += x + " ");
+
+    document.getElementById("chart").innerHTML = html;
+}
+
+function pick(list){
+    return list[Math.floor(Math.random() * list.length)];
+}
+
+function rollCharacter(){
+
+    let r = Math.random() * 100;
+
+    if(r < 0.5)  return { emoji: pick(legendary), rarity: "legendary" };
+    if(r < 1.5)  return { emoji: pick(epic),      rarity: "epic" };
+    if(r < 31.5) return { emoji: pick(rare),      rarity: "rare" };
+
+    return { emoji: pick(common), rarity: "common" };
+}
+
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+function shake(ms){
+    document.body.classList.add("screenShake");
+    setTimeout(() => document.body.classList.remove("screenShake"), ms);
+}
+
+async function pullGacha(){
+
+    if(money < 1500) return;
+
+    money -= 1500;
+    updateHome();
+
+    showScreen("revealScreen");
+
+    const grid = document.getElementById("rarityGrid");
+    grid.innerHTML = "";
+
+    let pulls = [];
+
+    for(let i = 0; i < 10; i++){
+        pulls.push(rollCharacter());
+
+        const card = document.createElement("div");
+        card.className = "pull-card";
+        card.id = "card" + i;
+        grid.appendChild(card);
+    }
+
+    /* reveal rarity */
+    for(let i = 0; i < 10; i++){
+        const card = document.getElementById("card" + i);
+        card.classList.add(pulls[i].rarity);
+
+        if(pulls[i].rarity === "epic" || pulls[i].rarity === "legendary"){
+            shake(400);
+        }
+
+        await wait(1000);
+    }
+
+    await wait(2500);
+
+    /* reveal character */
+    for(let i = 0; i < 10; i++){
+        const card = document.getElementById("card" + i);
+
+        card.classList.add("glitter");
+        await wait(800);
+
+        card.className = "pull-card";
+        card.style.background = "transparent";
+        card.style.border = "none";
+        card.style.boxShadow = "none";
+        card.innerHTML = pulls[i].emoji;
+
+        if(!owned.includes(pulls[i].emoji)){
+            owned.push(pulls[i].emoji);
+        }
+
+        if(pulls[i].rarity === "epic" || pulls[i].rarity === "legendary"){
+            shake(500);
+        }
+
+        await wait(1000);
+    }
+
+    await wait(3000);
+
+    updateHome();
+    showScreen("home");
+}
+
+
+/* ---------- UNLOCK ALL ---------- */
+
+const ALL = [...legendary, ...epic, ...rare, ...common];
+
+function unlockAll(){
+    ALL.forEach(e => { if(!owned.includes(e)) owned.push(e); });
+    buildOwnedGrid();
+}
+
+/* ---------- COMBAT ---------- */
+
+let battle = null;
+
+const alive = arr => arr.filter(f => f.hp > 0);
+const rnd = arr => arr[Math.floor(Math.random() * arr.length)];
+const sample = (arr, n) => [...arr].sort(() => Math.random() - 0.5).slice(0, n);
+
+function makeFighter(emoji, side){
+    const st = STATS[emoji];
+    return { emoji, side, hp: st[0], maxHp: st[0], atk: st[1], shield: false, el: null };
+}
+
+function log(msg){
+    document.getElementById("fightLog").innerText = msg;
+}
+
+function startFight(){
+    showScreen("fight");
+
+    const team = slots.filter(Boolean);
+    const eBox = document.getElementById("enemyTeam");
+    const pBox = document.getElementById("playerTeam");
+    eBox.innerHTML = "";
+    pBox.innerHTML = "";
+    pBox.classList.remove("locked");
+
+    if(team.length === 0){
+        battle = null;
+        log("⚠️ Equip at least one emoji first!");
+        return;
+    }
+
+    battle = {
+        players: team.map(e => makeFighter(e, "player")),
+        enemies: [0, 1, 2].map(() => makeFighter(rollCharacter().emoji, "enemy")),
+        busy: false,
+        over: false
+    };
+
+    battle.enemies.forEach(f => eBox.appendChild(buildFighterEl(f)));
+    battle.players.forEach(f => {
+        const el = buildFighterEl(f);
+        el.onclick = () => playerTurn(f);
+        pBox.appendChild(el);
+    });
+
+    log("Your turn! Click one of your emojis to attack.");
+}
+
+function leaveFight(){
+    battle = null;
+    showScreen("home");
+}
+
+function buildFighterEl(f){
+    const el = document.createElement("div");
+    el.className = "fighter " + f.side;
+    el.innerHTML =
+        '<div class="big">' + f.emoji + '</div>' +
+        '<div class="hpbar"><div class="hpfill"></div></div>' +
+        '<div class="hptext"></div>' +
+        '<div class="stats"><b>Attack:</b> ' + f.atk + '</div>';
+    f.el = el;
+    refresh(f);
+    return el;
+}
+
+function refresh(f){
+    const ratio = f.hp / f.maxHp;
+    const fill = f.el.querySelector(".hpfill");
+    fill.style.width = (ratio * 100) + "%";
+    fill.style.background = ratio < 0.3 ? "#ef4444" : (ratio < 0.6 ? "#eab308" : "#22c55e");
+    f.el.querySelector(".hptext").innerText = "HP: " + f.hp + " / " + f.maxHp;
+    f.el.classList.toggle("dead", f.hp <= 0);
+    f.el.classList.toggle("shielded", f.shield && f.hp > 0);
+}
+
+function pop(t, text, color){
+    const d = document.createElement("div");
+    d.className = "pop";
+    d.innerText = text;
+    d.style.color = color;
+    t.el.appendChild(d);
+    setTimeout(() => d.remove(), 1000);
+}
+
+function flash(t, cls){
+    t.el.classList.add(cls);
+    setTimeout(() => t.el.classList.remove(cls), 500);
+}
+
+function hurt(t, n){
+    if(!t || t.hp <= 0) return;
+    if(t.shield){
+        t.shield = false;
+        pop(t, "Blocked", "#60a5fa");
+    } else {
+        t.hp = Math.max(0, t.hp - n);
+        pop(t, "-" + n, "#ef4444");
+        flash(t, "hit");
+    }
+    refresh(t);
+}
+
+function healF(t, n){
+    if(!t || t.hp <= 0) return;
+    const before = t.hp;
+    t.hp = Math.min(t.maxHp, t.hp + n);
+    pop(t, "+" + (t.hp - before), "#22c55e");
+    flash(t, "healed");
+    refresh(t);
+}
+
+function shieldF(t){
+    if(!t || t.hp <= 0) return;
+    t.shield = true;
+    pop(t, "🛡️", "#60a5fa");
+    refresh(t);
+}
+
+/* Reads the attack text of a fighter and executes it. Returns a short description. */
+function applyAttack(f, allies, foes, text){
+    const A = alive(allies);
+    const F = alive(foes);
+    let m;
+
+    if(/^Copies/.test(text)){
+        const others = A.filter(a => a !== f && !/^Copies/.test(a.atk));
+        if(!others.length) return "tries to copy someone, but nobody is there!";
+        const c = rnd(others);
+        return "copies " + c.emoji + " and " + applyAttack(f, allies, foes, c.atk);
+    }
+
+    if(/^Shield protect all/.test(text)){
+        A.forEach(shieldF);
+        return "shields the whole team!";
+    }
+    if(/^Shield protect himself/.test(text)){
+        shieldF(f);
+        return "shields himself!";
+    }
+    if(/^Shield protect one/.test(text)){
+        const free = A.filter(a => !a.shield);
+        const t = rnd(free.length ? free : A);
+        shieldF(t);
+        return "shields " + t.emoji + "!";
+    }
+
+    if((m = text.match(/^(\d+) DMG to himself, one random companion and one random enemy/))){
+        const n = +m[1];
+        const comp = rnd(A.filter(a => a !== f));
+        const en = rnd(F);
+        hurt(f, n);
+        hurt(comp, n);
+        hurt(en, n);
+        return "explodes for " + n + " DMG!!!";
+    }
+    if((m = text.match(/^(\d+) DMG to one enemy and (\d+) DMG to himself/))){
+        hurt(rnd(F), +m[1]);
+        hurt(f, +m[2]);
+        return "hits an enemy for " + m[1] + " and takes " + m[2] + " recoil!";
+    }
+    if((m = text.match(/^(\d+) Heal to all companions/))){
+        A.forEach(a => healF(a, +m[1]));
+        return "heals the whole team for " + m[1] + "!";
+    }
+    if((m = text.match(/^(\d+) Heal$/))){
+        const t = A.reduce((a, b) => (a.hp / a.maxHp <= b.hp / b.maxHp ? a : b));
+        healF(t, +m[1]);
+        return "heals " + t.emoji + " for " + m[1] + "!";
+    }
+    if((m = text.match(/^(\d+) DMG to all enemies/))){
+        F.forEach(e => hurt(e, +m[1]));
+        return "hits all enemies for " + m[1] + "!";
+    }
+    if((m = text.match(/^(\d+) DMG to (\d+) random enemies/))){
+        sample(F, +m[2]).forEach(e => hurt(e, +m[1]));
+        return "hits " + m[2] + " enemies for " + m[1] + "!";
+    }
+    if((m = text.match(/^(\d+) DMG and heals himself (\d+)/))){
+        hurt(rnd(F), +m[1]);
+        healF(f, +m[2]);
+        return "deals " + m[1] + " DMG and heals himself " + m[2] + "!";
+    }
+    if((m = text.match(/^(\d+) DMG/))){
+        const t = rnd(F);
+        hurt(t, +m[1]);
+        return "attacks " + (t ? t.emoji : "nobody") + " for " + m[1] + " DMG!";
+    }
+    return "does nothing...";
+}
+
+async function doAttack(f, allies, foes){
+    f.el.classList.add("acting");
+    const msg = applyAttack(f, allies, foes, f.atk);
+    log((f.side === "player" ? "You: " : "Enemy: ") + f.emoji + " " + msg);
+    await wait(900);
+    f.el.classList.remove("acting");
+}
+
+function checkEnd(b){
+    if(alive(b.enemies).length === 0){ endBattle(b, true);  return true; }
+    if(alive(b.players).length === 0){ endBattle(b, false); return true; }
+    return false;
+}
+
+async function endBattle(b, win){
+    b.over = true;
+    if(win){
+        money += 500;
+        updateHome();
+        log("🏆 Victory! +500 💴");
+    } else {
+        log("💀 Defeat... all your emojis are down.");
+    }
+    await wait(2500);
+    if(battle !== b) return;
+    battle = null;
+    showScreen("home");
+}
+
+async function playerTurn(f){
+    const b = battle;
+    if(!b || b.busy || b.over || f.hp <= 0) return;
+
+    b.busy = true;
+    document.getElementById("playerTeam").classList.add("locked");
+
+    /* player attacks */
+    await doAttack(f, b.players, b.enemies);
+    if(battle !== b || checkEnd(b)) return;
+
+    /* random enemy attacks */
+    await wait(500);
+    if(battle !== b) return;
+
+    const e = rnd(alive(b.enemies));
+    await doAttack(e, b.enemies, b.players);
+    if(battle !== b || checkEnd(b)) return;
+
+    b.busy = false;
+    document.getElementById("playerTeam").classList.remove("locked");
+    log("Your turn! Click one of your emojis to attack.");
+}
+
+buildChart();
+updateHome();
+
+</script>
+
+</body>
+</html>
